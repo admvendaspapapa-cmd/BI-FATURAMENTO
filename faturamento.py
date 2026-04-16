@@ -142,7 +142,7 @@ if df_vendedores_hist is not None:
         v_top = dados_v_topo.sort_values(by="ating_row", ascending=False).iloc[0]
 
         if v_top["ating_row"] > 0:
-            st.success(f"🚀 Destaque: {v_top*['Vendedor']*} lidera com {v_top['ating_row']:.1f}%")
+            st.success(f"🚀 Destaque: {v_top['Vendedor']} lidera com {v_top['ating_row']:.1f}%")
 
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
