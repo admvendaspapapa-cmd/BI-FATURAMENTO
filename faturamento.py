@@ -209,8 +209,9 @@ if df_vendedores_hist is not None:
 
         html_ranking += "</tbody></table>"
 
-        # 🔥 ESSENCIAL PRA FUNCIONAR
-        st.markdown(html_ranking, unsafe_allow_html=True)
+        import streamlit.components.v1 as components
+
+        components.html(html_ranking, height=600, scrolling=True)
 
         st.success(f"🚀 Destaque: {v_lista[0]['Vendedor']} lidera com {v_lista[0]['ating_row']:.1f}%")
 
