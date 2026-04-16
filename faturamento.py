@@ -180,26 +180,26 @@ if df_vendedores_hist is not None:
         """
 
         for i, v in enumerate(v_lista):
-    cor_ating = "#2E7D32" if v["ating_row"] >= percentual_esperado else "#C62828"
-    largura_barra = min(v["ating_row"], 100)
+            cor_ating = "#2E7D32" if v["ating_row"] >= percentual_esperado else "#C62828"
+            largura_barra = min(v["ating_row"], 100)
 
-    html_ranking += f"""
-        <tr>
-            <td>{i+1}º</td>
-            <td class='col-vendedor'>{v['Vendedor']}</td>
-            <td>{fmt_br(v['Meta'])}</td>
-            <td style='color:#2E7D32'>{fmt_br(v['Faturado_Acumulado'])}</td>
-            <td style='color:#1565C0'>{fmt_br(v['Digitado_Acumulado'])}</td>
-            <td style='color:#C62828'>-{fmt_br(abs(v['Devolucoes']))}</td>
-            <td><b>{fmt_br(v['total_row'])}</b><span class='sub-tm'>TM: {fmt_br(v['tm_row'])}</span></td>
-            <td>
-                <div class='prog-bg'><div class='prog-bar' style='width:{largura_barra}%'></div></div><br>
-                <span style='color:{cor_ating}; font-weight:bold;'>{v['ating_row']:.1f}%</span>
-            </td>
-            <td>{fmt_br(v['val_id_row'])}</td>
-            <td style='color:#E64A19; font-weight:bold;'>{fmt_br(v['ritmo_row'])}</td>
-        </tr>
-    """
+            html_ranking += f"""
+                <tr>
+                    <td>{i+1}º</td>
+                    <td class='col-vendedor'>{v['Vendedor']}</td>
+                    <td>{fmt_br(v['Meta'])}</td>
+                    <td style='color:#2E7D32'>{fmt_br(v['Faturado_Acumulado'])}</td>
+                    <td style='color:#1565C0'>{fmt_br(v['Digitado_Acumulado'])}</td>
+                    <td style='color:#C62828'>-{fmt_br(abs(v['Devolucoes']))}</td>
+                    <td><b>{fmt_br(v['total_row'])}</b><span class='sub-tm'>TM: {fmt_br(v['tm_row'])}</span></td>
+                    <td>
+                        <div class='prog-bg'><div class='prog-bar' style='width:{largura_barra}%'></div></div><br>
+                        <span style='color:{cor_ating}; font-weight:bold;'>{v['ating_row']:.1f}%</span>
+                    </td>
+                    <td>{fmt_br(v['val_id_row'])}</td>
+                    <td style='color:#E64A19; font-weight:bold;'>{fmt_br(v['ritmo_row'])}</td>
+                </tr>
+            """
 
         html_ranking += "</tbody></table>"
         
