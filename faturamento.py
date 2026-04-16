@@ -129,6 +129,7 @@ if df_geral_hist is not None:
 # ==========================================
 st.markdown("---")
 st.subheader(f"👥 Ranking Individual - {data_selecionada.strftime('%B').capitalize()}")
+st.markdown(f"🎯 **Atingimento ideal para hoje:** :blue[{percentual_esperado:.1f}%]")
 
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
