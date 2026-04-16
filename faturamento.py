@@ -131,36 +131,33 @@ st.markdown("---")
 st.subheader(f"👥 Ranking Individual - {data_selecionada.strftime('%B').capitalize()}")
 
 if df_vendedores_hist is not None:
-    # Filtra os dados pela data selecionada
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
     
     if not dados_v.empty:
-        # 1. Cálculos de Performance
+        # 1. Cálculos
         dados_v['total_row'] = (dados_v['Faturado_Acumulado'] + dados_v['Digitado_Acumulado']) - dados_v['Devolucoes'].abs()
         dados_v['ating_row'] = (dados_v['total_row'] / dados_v['Meta'] * 100).fillna(0)
         dados_v['val_id_row'] = (percentual_esperado / 100) * dados_v['Meta']
         
-        # 2. Cálculo do Ticket Médio (TM) - Protegido contra erro de divisão por zero
         soma_pedidos = dados_v['Fat_Ped'] + dados_v['Dig_Ped']
         dados_v['tm_row'] = (dados_v['total_row'] / soma_pedidos).replace([float('inf'), -float('inf')], 0).fillna(0)
-        
-        # 3. Ritmo Diário Necessário
+
         dados_v['ritmo_row'] = ((dados_v['Meta'] - dados_v['total_row']).clip(lower=0) / dias_uteis_restantes).fillna(0)
-        
-        # Ordena pelo maior atingimento
+
         v_lista = dados_v.sort_values(by="ating_row", ascending=False).to_dict('records')
-        
-        # 4. CONSTRUÇÃO DA TABELA HTML
+
+        # HTML
         html_ranking = """
         <style>
             .tab-performance { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 13px; color: #31333F; }
             .tab-performance th { background-color: #f0f2f6; padding: 10px; text-align: center; border-bottom: 2px solid #ccc; }
             .tab-performance td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
-            .prog-bg { background-color: #ddd; border-radius: 10px; width: 50px; height: 8px; display: inline-block; }
+            .prog-bg { background-color: #ddd; border-radius: 10px; width: 60px; height: 8px; display: inline-block; }
             .prog-bar { background-color: #29b5e8; height: 8px; border-radius: 10px; }
             .col-vendedor { text-align: left !important; font-weight: bold; width: 180px; }
             .sub-tm { font-size: 11px; color: #757575; display: block; margin-top: 2px; }
         </style>
+
         <table class='tab-performance'>
             <thead>
                 <tr>
@@ -184,29 +181,38 @@ if df_vendedores_hist is not None:
             largura_barra = min(v["ating_row"], 100)
 
             html_ranking += f"""
-                <tr>
-                    <td>{i+1}º</td>
-                    <td class='col-vendedor'>{v['Vendedor']}</td>
-                    <td>{fmt_br(v['Meta'])}</td>
-                    <td style='color:#2E7D32'>{fmt_br(v['Faturado_Acumulado'])}</td>
-                    <td style='color:#1565C0'>{fmt_br(v['Digitado_Acumulado'])}</td>
-                    <td style='color:#C62828'>-{fmt_br(abs(v['Devolucoes']))}</td>
-                    <td><b>{fmt_br(v['total_row'])}</b><span class='sub-tm'>TM: {fmt_br(v['tm_row'])}</span></td>
-                    <td>
-                        <div class='prog-bg'><div class='prog-bar' style='width:{largura_barra}%'></div></div><br>
-                        <span style='color:{cor_ating}; font-weight:bold;'>{v['ating_row']:.1f}%</span>
-                    </td>
-                    <td>{fmt_br(v['val_id_row'])}</td>
-                    <td style='color:#E64A19; font-weight:bold;'>{fmt_br(v['ritmo_row'])}</td>
-                </tr>
+            <tr>
+                <td>{i+1}º</td>
+                <td class="col-vendedor">{v['Vendedor']}</td>
+                <td>{fmt_br(v['Meta'])}</td>
+                <td style="color:#2E7D32">{fmt_br(v['Faturado_Acumulado'])}</td>
+                <td style="color:#1565C0">{fmt_br(v['Digitado_Acumulado'])}</td>
+                <td style="color:#C62828">-{fmt_br(abs(v['Devolucoes']))}</td>
+                <td>
+                    <b>{fmt_br(v['total_row'])}</b>
+                    <span class="sub-tm">TM: {fmt_br(v['tm_row'])}</span>
+                </td>
+                <td>
+                    <div class="prog-bg">
+                        <div class="prog-bar" style="width:{largura_barra}%;"></div>
+                    </div><br>
+                    <span style="color:{cor_ating}; font-weight:bold;">
+                        {v['ating_row']:.1f}%
+                    </span>
+                </td>
+                <td>{fmt_br(v['val_id_row'])}</td>
+                <td style="color:#E64A19; font-weight:bold;">
+                    {fmt_br(v['ritmo_row'])}
+                </td>
+            </tr>
             """
 
         html_ranking += "</tbody></table>"
-        
-        # Renderiza a tabela
+
+        # 🔥 ESSENCIAL PRA FUNCIONAR
         st.markdown(html_ranking, unsafe_allow_html=True)
-        
-        # Mensagem de destaque
-        st.success(f"🚀 **Destaque:** **{v_lista[0]['Vendedor']}** lidera o ranking com **{v_lista[0]['ating_row']:.1f}%**! 🔥")
+
+        st.success(f"🚀 Destaque: {v_lista[0]['Vendedor']} lidera com {v_lista[0]['ating_row']:.1f}%")
+
     else:
-        st.warning("⚠️ Nados dados encontrados para esta data.")
+        st.warning("⚠️ Dados não encontrados para esta data.")
