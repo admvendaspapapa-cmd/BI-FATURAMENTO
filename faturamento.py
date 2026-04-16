@@ -32,6 +32,7 @@ def carregar_dados():
         arquivo = "dados_performance 1.xlsx"
         df_g = pd.read_excel(arquivo, sheet_name="Geral")
         df_v = pd.read_excel(arquivo, sheet_name="Vendedores")
+        
         df_g['Data'] = pd.to_datetime(df_g['Data']).dt.date
         df_v['Data'] = pd.to_datetime(df_v['Data']).dt.date
         return df_g, df_v
@@ -61,7 +62,6 @@ lista_feriados = [d.date() for d in feriados_pandas]
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Filtro")
-    # Valor padrão ajustado para 16/04/2026 conforme dados da planilha
     data_selecionada = st.date_input("Data de referência:", value=datetime(2026, 4, 16).date(), format="DD/MM/YYYY")
     if st.button("Sair (Limpar Sessão)"):
         st.query_params.clear()
@@ -97,7 +97,6 @@ if df_geral_hist is not None:
         dig_acum = float(r['Digitado_Acumulado'])
         dev_acum = abs(float(r.get('Devolucoes', 0)))
 
-        # Cálculo Líquido
         total_liq = (fat_acum + dig_acum) - dev_acum
         percentual_atual = (total_liq / meta_geral * 100) if meta_geral > 0 else 0
         gap_vs_linear = percentual_atual - percentual_esperado
@@ -105,9 +104,10 @@ if df_geral_hist is not None:
         ritmo_nec = (falta_r / dias_uteis_restantes) if dias_uteis_restantes > 0 else 0
 
         st.subheader(f"📊 Resultado Consolidado - Papapá (Ref: {data_ref_calculo.strftime('%d/%m')})")
-        
+        st.markdown(f"🕒 *Última atualização: {data_selecionada.strftime('%d/%m/%Y')} às 08:30*")
+
         if gap_vs_linear < -2 and falta_r > 0:
-            st.error(f"⚠️ **Ritmo Atrasado:** {abs(gap_vs_linear):.1f}% abaixo do ideal para {data_ref_calculo.strftime('%d/%m')}.")
+            st.error(f"⚠️ **Ritmo Atrasado:** estamos {abs(gap_vs_linear):.1f}% abaixo do ideal para {data_ref_calculo.strftime('%d/%m')}.")
         elif falta_r <= 0:
             st.balloons(); st.success("🏆 **META BATIDA!**")
 
@@ -122,6 +122,13 @@ if df_geral_hist is not None:
         with c5: st.metric("🔥 Atingimento", f"{percentual_atual:.1f}%", delta=f"{gap_vs_linear:.1f}% vs Ideal")
         with c6: st.metric("📅 Ritmo Diário", f"{fmt_m(ritmo_nec)}", delta=f"{dias_uteis_restantes} d.ú. rest.")
 
+        # Texto de análise
+        val_id_reais = (percentual_esperado / 100) * meta_geral
+        st.markdown(f"""> **Análise de ciclo:**
+> * Devoluções acumuladas: **-R$ {dev_acum:,.2f}**.
+> * Prazo final de faturamento: **{data_limite_faturamento.strftime('%d/%m')}**.
+> * O atingimento ideal para hoje é de **{percentual_esperado:.1f}%** (equivale a **R$ {val_id_reais:,.2f}**).""")
+
 # ==========================================
 # 📈 PERFORMANCE POR VENDEDOR (LAYOUT RANKING)
 # ==========================================
@@ -132,15 +139,17 @@ st.markdown(f"🎯 **Atingimento ideal para hoje:** :blue[{percentual_esperado:.
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
     if not dados_v.empty:
-        # Cálculos de ranking e ticket médio
+        # Lógica de cálculo líquida por vendedor
         dados_v['total'] = (dados_v['Faturado_Acumulado'] + dados_v['Digitado_Acumulado']) - dados_v['Devolucoes'].abs()
         dados_v['ating'] = (dados_v['total'] / dados_v['Meta'] * 100).fillna(0)
         dados_v['val_id'] = (percentual_esperado / 100) * dados_v['Meta']
         dados_v['diff'] = dados_v['total'] - dados_v['val_id']
         
+        # Ticket Médio
         peds = dados_v['Fat_Ped'] + dados_v['Dig_Ped']
         dados_v['tm'] = (dados_v['total'] / peds).fillna(0)
         
+        # Ritmo necessário individual
         dados_v['ritmo'] = ((dados_v['Meta'] - dados_v['total']).clip(lower=0) / dias_uteis_restantes).fillna(0)
         
         v_lista = dados_v.sort_values(by="ating", ascending=False).to_dict('records')
@@ -161,7 +170,7 @@ if df_vendedores_hist is not None:
         <thead>
             <tr>
                 <th>Pos.</th>
-                <th class='col-vendedor'>Vendedor / Time</th>
+                <th class='col-vendedor'>Vendedor</th>
                 <th>Meta</th>
                 <th>Faturado</th>
                 <th>Digitado</th>
@@ -196,9 +205,9 @@ if df_vendedores_hist is not None:
             """
         
         st.markdown(html_v + "</tbody></table>", unsafe_allow_html=True)
-        
-        if v_lista[0]["ating"] > 0:
-            st.success(f"🚀 **Destaque:** **{v_lista[0]['Vendedor']}** lidera o ranking com **{v_lista[0]['ating']:.1f}%**! 🔥")
 
-# Limpeza visual de setas do Streamlit
-st.markdown("<style>[data-testid='stMetricDelta'] svg { display: none !important; }</style>", unsafe_allow_html=True)
+# CSS para esconder ícones extras de métrica e ajustar cores
+st.markdown("""<style>
+[data-testid='stMetricDelta'] svg { display: none !important; }
+[data-testid="column"]:nth-of-type(7) [data-testid="stMetricDelta"] > div { color: #29b5e8 !important; }
+</style>""", unsafe_allow_html=True)
