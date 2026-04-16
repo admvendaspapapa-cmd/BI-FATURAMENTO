@@ -14,6 +14,10 @@ token_hoje = f"access_comercial_{datetime.now().strftime('%Y%m%d')}"
 
 if st.query_params.get("auth") != token_hoje:
     st.title("🔐 Acesso Restrito - Comercial Papapá")
+    try:
+        st.image("Papapa-azul.png", width=200)
+    except:
+        st.write("### 💙 Papapá")
     codigo_digitado = st.text_input("Digite a senha de acesso", type="password")
     if st.button("Entrar"):
         if codigo_digitado == CODIGO_ACESSO:
@@ -61,6 +65,11 @@ lista_feriados = [d.date() for d in feriados_pandas]
 
 # --- SIDEBAR ---
 with st.sidebar:
+    try:
+        st.image("Papapa-azul.png", width=180)
+    except:
+        st.subheader("💙 Papapá")
+    st.markdown("---")
     st.header("⚙️ Filtro")
     data_selecionada = st.date_input("Data de referência:", value=datetime(2026, 4, 16).date(), format="DD/MM/YYYY")
     if st.button("Sair (Limpar Sessão)"):
@@ -85,8 +94,11 @@ data_ref_calculo = dias_uteis_anteriores[-1] if dias_uteis_passados > 0 else ini
 dias_uteis_restantes = len([d for d in dias_uteis_totais_list if d >= data_selecionada])
 percentual_esperado = (dias_uteis_passados / dias_uteis_comerciais_totais) * 100 if dias_uteis_comerciais_totais > 0 else 100
 
+def fmt_m(v): return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+def fmt_br(v): return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 # ==========================================
-# 📝 BLOCO 1: PERFORMANCE GERAL (LÍQUIDA)
+# 📝 BLOCO 1: PERFORMANCE GERAL
 # ==========================================
 if df_geral_hist is not None:
     linha = df_geral_hist[df_geral_hist['Data'] == data_selecionada]
@@ -111,8 +123,6 @@ if df_geral_hist is not None:
         elif falta_r <= 0:
             st.balloons(); st.success("🏆 **META BATIDA!**")
 
-        def fmt_m(v): return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        
         c1, c2, c3, c_total, c4, c5, c6 = st.columns(7)
         with c1: st.metric("🎯 Meta", fmt_m(meta_geral))
         with c2: st.metric("✅ Faturado", fmt_m(fat_acum))
@@ -122,15 +132,15 @@ if df_geral_hist is not None:
         with c5: st.metric("🔥 Atingimento", f"{percentual_atual:.1f}%", delta=f"{gap_vs_linear:.1f}% vs Ideal")
         with c6: st.metric("📅 Ritmo Diário", f"{fmt_m(ritmo_nec)}", delta=f"{dias_uteis_restantes} d.ú. rest.")
 
-        # Texto de análise
         val_id_reais = (percentual_esperado / 100) * meta_geral
         st.markdown(f"""> **Análise de ciclo:**
 > * Devoluções acumuladas: **-R$ {dev_acum:,.2f}**.
 > * Prazo final de faturamento: **{data_limite_faturamento.strftime('%d/%m')}**.
-> * O atingimento ideal para hoje é de **{percentual_esperado:.1f}%** (equivale a **R$ {val_id_reais:,.2f}**).""")
+> * Dias úteis restantes (contando com a data selecionada): **{dias_uteis_restantes}**.
+> * O atingimento ideal para hoje é de **{percentual_esperado:.1f}%** (equivale a **{fmt_br(val_id_reais)}**).""")
 
 # ==========================================
-# 📈 PERFORMANCE POR VENDEDOR (LAYOUT RANKING)
+# 📈 PERFORMANCE POR VENDEDOR
 # ==========================================
 st.markdown("---")
 st.subheader(f"👥 Ranking de Performance Individual - {data_selecionada.strftime('%B').capitalize()}")
@@ -139,23 +149,21 @@ st.markdown(f"🎯 **Atingimento ideal para hoje:** :blue[{percentual_esperado:.
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
     if not dados_v.empty:
-        # Lógica de cálculo líquida por vendedor
-        dados_v['total'] = (dados_v['Faturado_Acumulado'] + dados_v['Digitado_Acumulado']) - dados_v['Devolucoes'].abs()
-        dados_v['ating'] = (dados_v['total'] / dados_v['Meta'] * 100).fillna(0)
-        dados_v['val_id'] = (percentual_esperado / 100) * dados_v['Meta']
-        dados_v['diff'] = dados_v['total'] - dados_v['val_id']
+        # Cálculo das métricas por linha
+        dados_v['total_row'] = (dados_v['Faturado_Acumulado'] + dados_v['Digitado_Acumulado']) - dados_v['Devolucoes'].abs()
+        dados_v['ating_row'] = (dados_v['total_row'] / dados_v['Meta'] * 100).fillna(0)
+        dados_v['val_id_row'] = (percentual_esperado / 100) * dados_v['Meta']
+        dados_v['diff_row'] = dados_v['total_row'] - dados_v['val_id_row']
         
-        # Ticket Médio
-        peds = dados_v['Fat_Ped'] + dados_v['Dig_Ped']
-        dados_v['tm'] = (dados_v['total'] / peds).fillna(0)
+        # Ticket Médio e Pedidos
+        peds_row = dados_v['Fat_Ped'] + dados_v['Dig_Ped']
+        dados_v['tm_row'] = (dados_v['total_row'] / peds_row).fillna(0)
         
-        # Ritmo necessário individual
-        dados_v['ritmo'] = ((dados_v['Meta'] - dados_v['total']).clip(lower=0) / dias_uteis_restantes).fillna(0)
+        # Ritmo
+        dados_v['ritmo_row'] = ((dados_v['Meta'] - dados_v['total_row']).clip(lower=0) / dias_uteis_restantes).fillna(0)
         
-        v_lista = dados_v.sort_values(by="ating", ascending=False).to_dict('records')
+        v_lista = dados_v.sort_values(by="ating_row", ascending=False).to_dict('records')
         
-        def fmt_br(v): return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
         html_v = """
         <style>
             .tab-performance { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px; }
@@ -184,8 +192,8 @@ if df_vendedores_hist is not None:
         """
 
         for i, v in enumerate(v_lista):
-            cor_a = "#2E7D32" if v["ating"] >= percentual_esperado else "#C62828"
-            cor_d = "#2E7D32" if v["diff"] >= 0 else "#C62828"
+            cor_a = "#2E7D32" if v["ating_row"] >= percentual_esperado else "#C62828"
+            cor_d = "#2E7D32" if v["diff_row"] >= 0 else "#C62828"
             
             html_v += f"""
             <tr>
@@ -194,19 +202,24 @@ if df_vendedores_hist is not None:
                 <td>{fmt_br(v['Meta'])}</td>
                 <td style='color: #2E7D32;'>{fmt_br(v['Faturado_Acumulado'])}<span class='val-sub'>{int(v['Fat_Ped'])} ped.</span></td>
                 <td style='color: #1565C0;'>{fmt_br(v['Digitado_Acumulado'])}<span class='val-sub'>{int(v['Dig_Ped'])} ped.</span></td>
-                <td><b>{fmt_br(v['total'])}</b><span class='val-sub'>TM: {fmt_br(v['tm'])}</span></td>
+                <td><b>{fmt_br(v['total_row'])}</b><span class='val-sub'>TM: {fmt_br(v['tm_row'])}</span></td>
                 <td>
-                    <div class='prog-bg'><div class='prog-bar' style='width: {min(v['ating'], 100)}%'></div></div>
-                    <span style='color: {cor_a}; font-weight: bold;'>{v['ating']:.1f}%</span>
+                    <div class='prog-bg'><div class='prog-bar' style='width: {min(v['ating_row'], 100)}%'></div></div>
+                    <span style='color: {cor_a}; font-weight: bold;'>{v['ating_row']:.1f}%</span>
                 </td>
-                <td><b>{fmt_br(v['val_id'])}</b><span class='val-sub' style='color: {cor_d}; font-weight: bold;'>{ 'Acima' if v['diff'] >= 0 else 'Gap'}: {fmt_br(abs(v['diff']))}</span></td>
-                <td><span style='color: #E64A19; font-weight: bold;'>{fmt_br(v['ritmo'])}</span><span class='val-sub'>p/ dia</span></td>
+                <td><b>{fmt_br(v['val_id_row'])}</b><span class='val-sub' style='color: {cor_d}; font-weight: bold;'>{ 'Acima' if v['diff_row'] >= 0 else 'Gap'}: {fmt_br(abs(v['diff_row']))}</span></td>
+                <td><span style='color: #E64A19; font-weight: bold;'>{fmt_br(v['ritmo_row'])}</span><span class='val-sub'>p/ dia</span></td>
             </tr>
             """
         
         st.markdown(html_v + "</tbody></table>", unsafe_allow_html=True)
+        
+        if v_lista[0]["ating_row"] > 0:
+            st.success(f"🚀 **Destaque:** **{v_lista[0]['Vendedor']}** lidera o ranking com **{v_lista[0]['ating_row']:.1f}%**! 🔥")
+    else:
+        st.warning("Nenhum dado de vendedores encontrado para esta data.")
 
-# CSS para esconder ícones extras de métrica e ajustar cores
+# Ajustes finais de CSS
 st.markdown("""<style>
 [data-testid='stMetricDelta'] svg { display: none !important; }
 [data-testid="column"]:nth-of-type(7) [data-testid="stMetricDelta"] > div { color: #29b5e8 !important; }
