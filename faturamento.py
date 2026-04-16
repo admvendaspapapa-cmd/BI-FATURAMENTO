@@ -67,7 +67,7 @@ with st.sidebar:
         st.subheader("💙 Papapá")
     st.markdown("---")
     st.header("⚙️ Filtro")
-    data_selecionada = st.date_input("Data de referência:", value=datetime(2026, 4, 16).date(), format="DD/MM/YYYY")
+    data_selecionada = st.date_input("Preencha a data de hoje (resultado D -1):", value=datetime(2026, 4, 16).date(), format="DD/MM/YYYY")
     if st.button("Sair"):
         st.query_params.clear()
         st.rerun()
