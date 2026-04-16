@@ -142,7 +142,7 @@ if df_vendedores_hist is not None:
         v_top = dados_v_topo.sort_values(by="ating_row", ascending=False).iloc[0]
 
         if v_top["ating_row"] > 0:
-            st.success(f"🚀 Destaque: {v_top['Vendedor']} lidera com {v_top['ating_row']:.1f}%")
+            st.success(f"🚀 Destaque: {v_top**['Vendedor']**} lidera com {v_top['ating_row']:.1f}%")
 
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
@@ -255,6 +255,5 @@ if df_vendedores_hist is not None:
         import streamlit.components.v1 as components
         components.html(html_ranking, height=600, scrolling=True)
         
-        st.success(f"🚀 Destaque: {v_lista[0]['Vendedor']} lidera com {v_lista[0]['ating_row']:.1f}%")
     else:
         st.warning("⚠️ Dados não encontrados para esta data.")
