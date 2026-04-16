@@ -115,7 +115,7 @@ if df_geral_hist is not None:
         c3.metric("📝 Digitado", fmt_m(dig_g))
         c_dev.metric("🔄 Devoluções", f"-{fmt_m(dev_g)}")
         c_total.metric("💰 Total Líquido", fmt_m(total_liq_g))
-        c4.metric("🚩 Gap Real", fmt_m(falta_g))
+        c4.metric("🚩 Gap", fmt_m(falta_g))
         c5.metric("🔥 Atingimento", f"{perc_g:.1f}%", delta=f"{gap_g:.1f}% vs Ideal")
 
         st.markdown(f"""> **Análise de ciclo:**
@@ -130,6 +130,19 @@ if df_geral_hist is not None:
 st.markdown("---")
 st.subheader(f"👥 Ranking Individual - {data_selecionada.strftime('%B').capitalize()}")
 st.markdown(f"🎯 **Atingimento ideal para hoje:** :blue[{percentual_esperado:.1f}%]")
+
+# 🔥 Destaque no topo (com proteção)
+if df_vendedores_hist is not None:
+    dados_v_topo = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
+    
+    if not dados_v_topo.empty:
+        dados_v_topo['total_row'] = (dados_v_topo['Faturado_Acumulado'] + dados_v_topo['Digitado_Acumulado']) - dados_v_topo['Devolucoes'].abs()
+        dados_v_topo['ating_row'] = (dados_v_topo['total_row'] / dados_v_topo['Meta'] * 100).fillna(0)
+
+        v_top = dados_v_topo.sort_values(by="ating_row", ascending=False).iloc[0]
+
+        if v_top["ating_row"] > 0:
+            st.success(f"🚀 Destaque: {v_top['Vendedor']} lidera com {v_top['ating_row']:.1f}%")
 
 if df_vendedores_hist is not None:
     dados_v = df_vendedores_hist[df_vendedores_hist['Data'] == data_selecionada].copy()
@@ -166,7 +179,7 @@ if df_vendedores_hist is not None:
             <thead>
                 <tr>
                     <th>Pos.</th>
-                    <th class='col-vendedor'>Vendedor</th>
+                    <th class='col-vendedor'>Regional</th>
                     <th>Meta</th>
                     <th>Faturado</th>
                     <th>Digitado</th>
